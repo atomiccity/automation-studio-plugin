@@ -11,7 +11,7 @@
     <artifactId>automation-studio-plugin</artifactId>
     <version>${revision}${changelist}</version>
     <packaging>hpi</packaging>
-    <name>TODO Plugin</name>
+    <name>Automation Studio Plugin</name>
     
     
     <!-- If you want this to appear on the plugin site page:
@@ -68,6 +68,12 @@
             <groupId>org.jenkins-ci.plugins.workflow</groupId>
             <artifactId>workflow-durable-task-step</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>RELEASE</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
