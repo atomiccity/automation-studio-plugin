@@ -1,0 +1,39 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+    <f:entry title="${%Automation Studio Version}">
+        <select class="setting-input" name="automationStudioBuilder.automationStudioName">
+            <j:forEach var="inst" items="${descriptor.installations}">
+                <f:option selected="${inst.name==instance.automationStudioName}">${inst.name}</f:option>
+            </j:forEach>
+        </select>
+    </f:entry>
+    <f:entry title="${%Automation Studio Project File}" field="projectFile">
+        <f:textbox value="${instance.projectFile}"/>
+    </f:entry>
+    <f:entry title="${%Configuration Name}" field="configurationName">
+        <f:textbox value="${instance.configurationName}"/>
+    </f:entry>
+    <f:entry title="${%Build Mode}" field="buildMode">
+        <f:select />
+    </f:entry>
+    <f:entry title="${%Simulation}" field="simulation">
+        <f:checkbox value="${instance.simulation}" checked="${instance.simulation}" default="false"/>
+    </f:entry>
+    <f:entry title="${%Build RUC Package}" field="buildRUCPackage">
+        <f:checkbox value="${instance.buildRUCPackage}" checked="${instance.buildRUCPackage}" default="false"/>
+    </f:entry>
+    <f:advanced>
+        <f:entry title="${%Continue Job on Build Failure}" field="continueOnErrors">
+            <f:checkbox value="${instance.continueOnErrors}" checked="${instance.continueOnErrors}" default="false"/>
+        </f:entry>
+        <f:entry title="${%Set Build to Unstable on Warnings}" field="unstableIfWarnings">
+            <f:checkbox value="${instance.unstableIfWarnings}" checked="${instance.unstableIfWarnings}" default="false"/>
+        </f:entry>
+        <f:entry title="${%Binaries Directory}" field="binDir">
+            <f:textbox value="${instance.binDir}"/>
+        </f:entry>
+        <f:entry title="${%Temporary Directory}" field="tempDir">
+            <f:textbox value="${instance.tempDir}"/>
+        </f:entry>
+    </f:advanced>
+</j:jelly>
