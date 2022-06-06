@@ -11,17 +11,16 @@
     <artifactId>automation-studio-plugin</artifactId>
     <version>${revision}${changelist}</version>
     <packaging>hpi</packaging>
-    <name>Automation Studio Plugin</name>
+    <name>Automation Studio</name>
     
     
-    <!-- If you want this to appear on the plugin site page:
     <developers>
         <developer>
-            <id>bhacker</id>
-            <name>Bob Q. Hacker</name>
-            <email>bhacker@nowhere.net</email>
+            <id>atomiccity</id>
+            <name>Michael R. Taylor</name>
+            <email>michael@atomic.city</email>
         </developer>
-    </developers> -->
+    </developers>
 
         <properties>
         <revision>1.0</revision>
