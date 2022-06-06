@@ -1,0 +1,18 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+    <f:entry title="${%Runtime Utility Center Version}">
+        <select class="setting-input" name="runtimeUtilityCenterBuilder.runtimeUtilityCenterName">
+            <j:forEach var="inst" items="${descriptor.installations}">
+                <f:option selected="${inst.name==instance.runtimeUtilityCenterName}">${inst.name}</f:option>
+            </j:forEach>
+        </select>
+    </f:entry>
+    <f:entry title="${%PIL File}" field="pilFile">
+        <f:textbox value="${instance.pilFile}"/>
+    </f:entry>
+    <f:advanced>
+        <f:entry title="${%Continue Job on Build Failure}" field="continueOnErrors">
+            <f:checkbox value="${instance.continueOnErrors}" checked="${instance.continueOnErrors}" default="false"/>
+        </f:entry>
+    </f:advanced>
+</j:jelly>
