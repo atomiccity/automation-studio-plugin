@@ -5,6 +5,7 @@ import hudson.model.*;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.ArgumentListBuilder;
+import jenkins.tasks.SimpleBuildStep;
 import org.jenkinsci.Symbol;
 import org.jetbrains.annotations.NotNull;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -12,7 +13,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class RuntimeUtilityCenterBuilder extends Builder {
+public class RuntimeUtilityCenterBuilder extends Builder implements SimpleBuildStep {
     private final String runtimeUtilityCenterName;
     private final String pilFile;
     private final boolean continueOnErrors;
@@ -27,6 +28,14 @@ public class RuntimeUtilityCenterBuilder extends Builder {
 
     public String getPilFile() {
         return pilFile;
+    }
+
+    public String getRuntimeUtilityCenterName() {
+        return runtimeUtilityCenterName;
+    }
+
+    public boolean isContinueOnErrors() {
+        return continueOnErrors;
     }
 
     public RuntimeUtilityCenterInstallation getInstallation() {
@@ -53,6 +62,13 @@ public class RuntimeUtilityCenterBuilder extends Builder {
         }
 
         return fullPath;
+    }
+
+    @Override
+    public void perform(@NotNull Run<?, ?> run, @NotNull FilePath workspace, @NotNull EnvVars env,
+                        @NotNull Launcher launcher, @NotNull TaskListener listener)
+            throws InterruptedException, IOException {
+        listener.getLogger().println("PVITransfer.exe");
     }
 
     @Override
@@ -135,7 +151,7 @@ public class RuntimeUtilityCenterBuilder extends Builder {
     }
 
     @Extension
-    @Symbol("runtimeutilitycenter")
+    @Symbol("pviTransfer")
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
         @CopyOnWrite
         private volatile RuntimeUtilityCenterInstallation[] installations = new RuntimeUtilityCenterInstallation[0];

@@ -247,7 +247,7 @@ public class AutomationStudioBuilder extends Builder {
     }
 
     @Extension
-    @Symbol("automationstudio")
+    @Symbol("automationStudio")
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
         @CopyOnWrite
         private volatile AutomationStudioInstallation[] installations = new AutomationStudioInstallation[0];

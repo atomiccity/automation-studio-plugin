@@ -12,12 +12,14 @@ import hudson.tools.ToolInstallation;
 import jenkins.model.Jenkins;
 import org.jenkinsci.Symbol;
 import org.jetbrains.annotations.NotNull;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
 
 public class RuntimeUtilityCenterInstallation extends ToolInstallation
         implements NodeSpecific<RuntimeUtilityCenterInstallation>,
         EnvironmentSpecific<RuntimeUtilityCenterInstallation> {
+    @DataBoundConstructor
     public RuntimeUtilityCenterInstallation(String name, String home) {
         super(name, home, null);
     }
@@ -32,7 +34,7 @@ public class RuntimeUtilityCenterInstallation extends ToolInstallation
     }
 
     @Extension
-    @Symbol("runtimeutilitycenter")
+    @Symbol("pviTransfer")
     public static class DescriptorImpl extends ToolDescriptor<RuntimeUtilityCenterInstallation> {
         @NonNull
         @Override

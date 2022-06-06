@@ -34,7 +34,7 @@ public class AutomationStudioInstallation extends ToolInstallation
     }
 
     @Extension
-    @Symbol("automationstudio")
+    @Symbol("automationStudio")
     public static class DescriptorImpl extends ToolDescriptor<AutomationStudioInstallation> {
         @NonNull
         @Override
