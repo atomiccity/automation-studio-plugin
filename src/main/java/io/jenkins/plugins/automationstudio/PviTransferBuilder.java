@@ -15,6 +15,8 @@ import org.kohsuke.stapler.DataBoundSetter;
 import java.io.IOException;
 import java.util.Arrays;
 
+import static io.jenkins.plugins.automationstudio.ToolUtils.getFullToolPath;
+
 public class PviTransferBuilder extends Builder implements SimpleBuildStep {
     private String runtimeUtilityCenterName;
     private final String pilFile;
@@ -64,21 +66,6 @@ public class PviTransferBuilder extends Builder implements SimpleBuildStep {
             }
         }
         return null;
-    }
-
-    private static String getFullToolPath(@NotNull Launcher launcher, String pathToTool, String execName)
-            throws IOException, InterruptedException {
-        String fullPath = (pathToTool != null ? pathToTool : "");
-        FilePath exe = new FilePath(launcher.getChannel(), fullPath);
-
-        if (exe.isDirectory()) {
-            if (!fullPath.endsWith("\\")) {
-                fullPath += "\\";
-            }
-            fullPath += execName;
-        }
-
-        return fullPath;
     }
 
     @Override
