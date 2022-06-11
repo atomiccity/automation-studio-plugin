@@ -6,6 +6,7 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.ArgumentListBuilder;
 import hudson.util.ListBoxModel;
+import jenkins.tasks.SimpleBuildStep;
 import org.jenkinsci.Symbol;
 import org.jetbrains.annotations.NotNull;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -13,20 +14,35 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class AutomationStudioBuilder extends Builder {
+import static io.jenkins.plugins.automationstudio.ToolUtils.getFullToolPath;
+
+public class AutomationStudioBuilder extends Builder implements SimpleBuildStep {
     // GUI Fields
-    private final String automationStudioName;
+    private String automationStudioName;
     private final String projectFile;
     private final String configurationName;
-    private final String buildMode;
-    private final boolean simulation;
-    private final boolean buildRUCPackage;
-    private final String tempDir;
-    private final String binDir;
-    private final boolean unstableIfWarnings;
-    private final boolean continueOnErrors;
+    private String buildMode;
+    private boolean simulation;
+    private boolean buildRUCPackage;
+    private String tempDir;
+    private String binDir;
+    private boolean unstableIfWarnings;
+    private boolean continueOnErrors;
 
     @DataBoundConstructor
+    public AutomationStudioBuilder(String projectFile, String configurationName) {
+        this.automationStudioName = null;
+        this.projectFile = projectFile;
+        this.configurationName = configurationName;
+        this.buildMode = "Build";
+        this.simulation = false;
+        this.buildRUCPackage = false;
+        this.tempDir = null;
+        this.binDir = null;
+        this.unstableIfWarnings = false;
+        this.continueOnErrors = false;
+    }
+
     public AutomationStudioBuilder(String automationStudioName, String projectFile, String configurationName,
                                    String buildMode, boolean simulation, boolean buildRUCPackage, String tempDir,
                                    String binDir, boolean unstableIfWarnings, boolean continueOnErrors) {
@@ -42,10 +58,6 @@ public class AutomationStudioBuilder extends Builder {
         this.continueOnErrors = continueOnErrors;
     }
 
-    public String getAutomationStudioName() {
-        return automationStudioName;
-    }
-
     public String getProjectFile() {
         return projectFile;
     }
@@ -54,29 +66,69 @@ public class AutomationStudioBuilder extends Builder {
         return configurationName;
     }
 
+    public String getAutomationStudioName() {
+        return automationStudioName;
+    }
+
+    public void setAutomationStudioName(String automationStudioName) {
+        this.automationStudioName = automationStudioName;
+    }
+
     public String getBuildMode() {
         return buildMode;
+    }
+
+    public void setBuildMode(String buildMode) {
+        this.buildMode = buildMode;
     }
 
     public boolean isSimulation() {
         return simulation;
     }
 
+    public void setSimulation(boolean simulation) {
+        this.simulation = simulation;
+    }
+
     public boolean isBuildRUCPackage() {
         return buildRUCPackage;
+    }
+
+    public void setBuildRUCPackage(boolean buildRUCPackage) {
+        this.buildRUCPackage = buildRUCPackage;
     }
 
     public String getTempDir() {
         return tempDir;
     }
 
+    public void setTempDir(String tempDir) {
+        this.tempDir = tempDir;
+    }
+
     public String getBinDir() {
         return binDir;
     }
 
-    public boolean isUnstableIfWarnings() { return unstableIfWarnings; }
+    public void setBinDir(String binDir) {
+        this.binDir = binDir;
+    }
 
-    public boolean isContinueOnErrors() { return continueOnErrors; }
+    public boolean isUnstableIfWarnings() {
+        return unstableIfWarnings;
+    }
+
+    public void setUnstableIfWarnings(boolean unstableIfWarnings) {
+        this.unstableIfWarnings = unstableIfWarnings;
+    }
+
+    public boolean isContinueOnErrors() {
+        return continueOnErrors;
+    }
+
+    public void setContinueOnErrors(boolean continueOnErrors) {
+        this.continueOnErrors = continueOnErrors;
+    }
 
     public AutomationStudioInstallation getInstallation() {
         DescriptorImpl descriptor = (DescriptorImpl) getDescriptor();
@@ -88,70 +140,50 @@ public class AutomationStudioBuilder extends Builder {
         return null;
     }
 
-    private static String getFullToolPath(@NotNull Launcher launcher, String pathToTool, String execName)
-            throws IOException, InterruptedException {
-        String fullPath = (pathToTool != null ? pathToTool : "");
-        FilePath exe = new FilePath(launcher.getChannel(), fullPath);
-
-        if (exe.isDirectory()) {
-            if (!fullPath.endsWith("\\")) {
-                fullPath += "\\";
-            }
-            fullPath += execName;
-        }
-
-        return fullPath;
-    }
-
     @Override
-    public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
+    public void perform(@NotNull Run<?, ?> run, @NotNull FilePath workspace, @NotNull EnvVars env,
+                        @NotNull Launcher launcher, @NotNull TaskListener listener)
             throws InterruptedException, IOException {
+        Result failureResult = continueOnErrors ? Result.NOT_BUILT : Result.FAILURE;
         ArgumentListBuilder args = new ArgumentListBuilder();
         String exeName = "BR.AS.Build.exe";
         AutomationStudioInstallation installation = getInstallation();
 
         if (launcher.isUnix()) {
             listener.fatalError("This builder can't be used on Unix systems");
-            return false;
+            run.setResult(failureResult);
+            return;
         }
 
         if (installation == null) {
             args.add(exeName);
         } else {
-            EnvVars env = build.getEnvironment(listener);
-            Node node = Computer.currentComputer().getNode();
+            String pathToTool = getFullToolPath(launcher, installation.getHome(), exeName);
+            FilePath exe = new FilePath(launcher.getChannel(), pathToTool);
 
-            if (node != null) {
-                installation = installation.forNode(node, listener);
-                installation = installation.forEnvironment(env);
-                String pathToTool = getFullToolPath(launcher, installation.getHome(), exeName);
-                FilePath exe = new FilePath(launcher.getChannel(), pathToTool);
-/*
-                try {
-                    if (!exe.exists()) {
-                        listener.fatalError(pathToTool + " doesn't exist");
-                        return false;
-                    }
-                } catch (IOException e) {
-                    listener.fatalError("Failed checking for existence of " + pathToTool);
-                    return false;
+            try {
+                if (!exe.exists()) {
+                    listener.fatalError(pathToTool + " doesn't exist");
+                    run.setResult(failureResult);
+                    return;
                 }
-*/
-                listener.getLogger().println("Path to BR.AS.Build.exe: " + pathToTool);
-                args.add(pathToTool);
+            } catch (IOException e) {
+                listener.fatalError("Failed checking for existence of " + pathToTool);
+                run.setResult(failureResult);
+                return;
             }
-        }
 
-        EnvVars env = build.getEnvironment(listener);
+            listener.getLogger().println("Path to BR.AS.Build.exe: " + pathToTool);
+            args.add(pathToTool);
+        }
 
         String normalizedProject = null;
         if (projectFile != null && projectFile.trim().length() != 0) {
             normalizedProject = projectFile.replaceAll("[\t\r\n]+", " ");
             normalizedProject = Util.replaceMacro(normalizedProject, env);
-            normalizedProject = Util.replaceMacro(normalizedProject, build.getBuildVariables());
             if (!normalizedProject.isEmpty()) {
                 // Project file needs to be absolute
-                FilePath projectPath = build.getWorkspace().child(normalizedProject);
+                FilePath projectPath = workspace.child(normalizedProject);
                 args.add(projectPath);
             }
         }
@@ -160,7 +192,6 @@ public class AutomationStudioBuilder extends Builder {
         if (configurationName != null && configurationName.trim().length() != 0) {
             normalizedConfig = configurationName.replaceAll("[\t\r\n]+", " ");
             normalizedConfig = Util.replaceMacro(normalizedConfig, env);
-            normalizedConfig = Util.replaceMacro(normalizedConfig, build.getBuildVariables());
             if (!normalizedConfig.isEmpty()) {
                 args.add("-c");
                 args.add(normalizedConfig);
@@ -172,9 +203,8 @@ public class AutomationStudioBuilder extends Builder {
         if (binDir != null && binDir.trim().length() != 0) {
             normalizedBinDir = binDir.replaceAll("[\t\r\n]+", " ");
             normalizedBinDir = Util.replaceMacro(normalizedBinDir, env);
-            normalizedBinDir = Util.replaceMacro(normalizedBinDir, build.getBuildVariables());
             if (!normalizedBinDir.isEmpty()) {
-                FilePath binPath = build.getWorkspace().child(normalizedBinDir);
+                FilePath binPath = workspace.child(normalizedBinDir);
                 args.add("-o");
                 args.add(binPath);
             }
@@ -185,9 +215,8 @@ public class AutomationStudioBuilder extends Builder {
         if (tempDir != null && tempDir.trim().length() != 0) {
             normalizedTempDir = tempDir.replaceAll("[\t\r\n]+", " ");
             normalizedTempDir = Util.replaceMacro(normalizedTempDir, env);
-            normalizedTempDir = Util.replaceMacro(normalizedTempDir, build.getBuildVariables());
             if (!normalizedTempDir.isEmpty()) {
-                FilePath tempPath = build.getWorkspace().child(normalizedTempDir);
+                FilePath tempPath = workspace.child(normalizedTempDir);
                 args.add("-t");
                 args.add(tempPath);
             }
@@ -206,20 +235,13 @@ public class AutomationStudioBuilder extends Builder {
             args.add("-buildRUCPackage");
         }
 
-        // Determine if PWD is module root or workspace
-        FilePath pwd = build.getModuleRoot();
-        if (normalizedProject != null) {
-            if (!pwd.child(normalizedProject).exists()) {
-                pwd = build.getWorkspace();
-            }
-        }
+        FilePath pwd = workspace;
 
         try {
-            listener.getLogger().println(String.format("Executing the command \"%s\" from \"%s\"",
-                    args.toString(), pwd));
+            listener.getLogger().printf("Executing the command \"%s\" from \"%s\"%n", args.toString(), pwd);
 
             AutomationStudioConsoleAnnotator annotator = new AutomationStudioConsoleAnnotator(listener.getLogger(),
-                    build.getCharset());
+                    run.getCharset());
 
             int result = launcher.launch().cmds(args.toWindowsCommand()).envs(env).stdout(annotator).pwd(pwd).join();
             if (result == 0) {
@@ -230,19 +252,18 @@ public class AutomationStudioBuilder extends Builder {
                 listener.getLogger().println("Warnings present during build.");
                 if (unstableIfWarnings) {
                     listener.getLogger().println("Setting build to UNSTABLE because of warnings.");
-                    build.setResult(Result.UNSTABLE);
+                    run.setResult(Result.UNSTABLE);
                 }
             } else if (result == 3) {
                 // Errors
                 listener.getLogger().println("Errors present during build.");
-                return continueOnErrors ? true : false;
+                run.setResult(failureResult);
+                return;
             }
-
-            return true;
         } catch (IOException e) {
             Util.displayIOException(e, listener);
-            build.setResult(Result.FAILURE);
-            return false;
+            run.setResult(failureResult);
+            return;
         }
     }
 
@@ -255,6 +276,12 @@ public class AutomationStudioBuilder extends Builder {
         public DescriptorImpl() {
             super(AutomationStudioBuilder.class);
             load();
+        }
+
+        @NotNull
+        @Override
+        public String getDisplayName() {
+            return "Automation Studio";
         }
 
         @Override
