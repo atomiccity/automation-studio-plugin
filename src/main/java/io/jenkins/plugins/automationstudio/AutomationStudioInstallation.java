@@ -1,6 +1,5 @@
 package io.jenkins.plugins.automationstudio;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.model.EnvironmentSpecific;
@@ -11,6 +10,7 @@ import hudson.tools.ToolDescriptor;
 import hudson.tools.ToolInstallation;
 import jenkins.model.Jenkins;
 import org.jenkinsci.Symbol;
+import org.jetbrains.annotations.NotNull;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
@@ -28,7 +28,7 @@ public class AutomationStudioInstallation extends ToolInstallation
     }
 
     @Override
-    public AutomationStudioInstallation forNode(@NonNull Node node, TaskListener log)
+    public AutomationStudioInstallation forNode(@NotNull Node node, TaskListener log)
             throws IOException, InterruptedException {
         return new AutomationStudioInstallation(getName(), translateFor(node, log));
     }
@@ -36,7 +36,7 @@ public class AutomationStudioInstallation extends ToolInstallation
     @Extension
     @Symbol("automationStudio")
     public static class DescriptorImpl extends ToolDescriptor<AutomationStudioInstallation> {
-        @NonNull
+        @NotNull
         @Override
         public String getDisplayName() {
             return "Automation Studio";
