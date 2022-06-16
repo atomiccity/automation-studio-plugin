@@ -10,6 +10,7 @@ import jenkins.tasks.SimpleBuildStep;
 import org.jenkinsci.Symbol;
 import org.jetbrains.annotations.NotNull;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -70,6 +71,7 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
         return automationStudioName;
     }
 
+    @DataBoundSetter
     public void setAutomationStudioName(String automationStudioName) {
         this.automationStudioName = automationStudioName;
     }
@@ -78,6 +80,7 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
         return buildMode;
     }
 
+    @DataBoundSetter
     public void setBuildMode(String buildMode) {
         this.buildMode = buildMode;
     }
@@ -86,6 +89,7 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
         return simulation;
     }
 
+    @DataBoundSetter
     public void setSimulation(boolean simulation) {
         this.simulation = simulation;
     }
@@ -94,6 +98,7 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
         return buildRUCPackage;
     }
 
+    @DataBoundSetter
     public void setBuildRUCPackage(boolean buildRUCPackage) {
         this.buildRUCPackage = buildRUCPackage;
     }
@@ -102,6 +107,7 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
         return tempDir;
     }
 
+    @DataBoundSetter
     public void setTempDir(String tempDir) {
         this.tempDir = tempDir;
     }
@@ -110,6 +116,7 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
         return binDir;
     }
 
+    @DataBoundSetter
     public void setBinDir(String binDir) {
         this.binDir = binDir;
     }
@@ -118,6 +125,7 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
         return unstableIfWarnings;
     }
 
+    @DataBoundSetter
     public void setUnstableIfWarnings(boolean unstableIfWarnings) {
         this.unstableIfWarnings = unstableIfWarnings;
     }
@@ -126,6 +134,7 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
         return continueOnErrors;
     }
 
+    @DataBoundSetter
     public void setContinueOnErrors(boolean continueOnErrors) {
         this.continueOnErrors = continueOnErrors;
     }
@@ -258,12 +267,10 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
                 // Errors
                 listener.getLogger().println("Errors present during build.");
                 run.setResult(failureResult);
-                return;
             }
         } catch (IOException e) {
             Util.displayIOException(e, listener);
             run.setResult(failureResult);
-            return;
         }
     }
 
