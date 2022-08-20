@@ -1,5 +1,7 @@
 package io.jenkins.plugins.automationstudio;
 
+import city.atomic.automationstudio.Cpu;
+import city.atomic.automationstudio.Hardware;
 import hudson.*;
 import hudson.model.*;
 import hudson.tasks.BuildStepDescriptor;
@@ -27,6 +29,9 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
     private boolean buildRUCPackage;
     private String tempDir;
     private String binDir;
+    private String version;
+    private String buildOptions;
+    private String ansicBuildOptions;
     private boolean unstableIfWarnings;
     private boolean continueOnErrors;
 
@@ -40,13 +45,17 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
         this.buildRUCPackage = false;
         this.tempDir = null;
         this.binDir = null;
+        this.version = null;
+        this.buildOptions = null;
+        this.ansicBuildOptions = null;
         this.unstableIfWarnings = false;
         this.continueOnErrors = false;
     }
 
     public AutomationStudioBuilder(String automationStudioName, String projectFile, String configurationName,
                                    String buildMode, boolean simulation, boolean buildRUCPackage, String tempDir,
-                                   String binDir, boolean unstableIfWarnings, boolean continueOnErrors) {
+                                   String binDir, String version, String buildOptions, String ansicBuildOptions,
+                                   boolean unstableIfWarnings, boolean continueOnErrors) {
         this.automationStudioName = automationStudioName;
         this.projectFile = projectFile;
         this.configurationName = configurationName;
@@ -55,6 +64,9 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
         this.buildRUCPackage = buildRUCPackage;
         this.tempDir = tempDir;
         this.binDir = binDir;
+        this.version = version;
+        this.buildOptions = buildOptions;
+        this.ansicBuildOptions = ansicBuildOptions;
         this.unstableIfWarnings = unstableIfWarnings;
         this.continueOnErrors = continueOnErrors;
     }
@@ -121,13 +133,40 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
         this.binDir = binDir;
     }
 
-    public boolean isUnstableIfWarnings() {
-        return unstableIfWarnings;
+    public String getVersion() {
+        return version;
+    }
+
+    @DataBoundSetter
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public String getBuildOptions() {
+        return buildOptions;
+    }
+
+    @DataBoundSetter
+    public void setBuildOptions(String buildOptions) {
+        this.buildOptions = buildOptions;
+    }
+
+    public String getAnsicBuildOptions() {
+        return ansicBuildOptions;
+    }
+
+    @DataBoundSetter
+    public void setAnsicBuildOptions(String ansicBuildOptions) {
+        this.ansicBuildOptions = ansicBuildOptions;
     }
 
     @DataBoundSetter
     public void setUnstableIfWarnings(boolean unstableIfWarnings) {
         this.unstableIfWarnings = unstableIfWarnings;
+    }
+
+    public boolean isUnstableIfWarnings() {
+        return unstableIfWarnings;
     }
 
     public boolean isContinueOnErrors() {
@@ -245,6 +284,37 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
         }
 
         FilePath pwd = workspace;
+
+        // Set version if given
+        if (version != null) {
+            city.atomic.automationstudio.Project p = city.atomic.automationstudio.Project.load(projectFile);
+            city.atomic.automationstudio.Config c = p.findConfig(configurationName);
+            if (c != null) {
+                Hardware hw = c.getHardware();
+                hw.setConfigVersion(version);
+                hw.save();
+            }
+        }
+
+        // Set build options if given
+        if (buildOptions != null) {
+            city.atomic.automationstudio.Project p = city.atomic.automationstudio.Project.load(projectFile);
+            city.atomic.automationstudio.Config c = p.findConfig(configurationName);
+            if (c != null) {
+                Cpu cpu = c.getCpu();
+                cpu.setAdditionalBuildOptions(buildOptions);
+                cpu.save();
+            }
+        }
+        if (ansicBuildOptions != null) {
+            city.atomic.automationstudio.Project p = city.atomic.automationstudio.Project.load(projectFile);
+            city.atomic.automationstudio.Config c = p.findConfig(configurationName);
+            if (c != null) {
+                Cpu cpu = c.getCpu();
+                cpu.setAnsicAdditionalBuildOptions(ansicBuildOptions);
+                cpu.save();
+            }
+        }
 
         try {
             listener.getLogger().printf("Executing the command \"%s\" from \"%s\"%n", args.toString(), pwd);
