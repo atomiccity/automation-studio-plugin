@@ -23,6 +23,15 @@
         <f:checkbox value="${instance.buildRUCPackage}" checked="${instance.buildRUCPackage}" default="false"/>
     </f:entry>
     <f:advanced>
+        <f:entry title="${Configuration Version}" field="version">
+            <f:textbox value="${instance.version}"/>
+        </f:entry>
+        <f:entry title="${Additional Build Options}" field="buildOptions">
+            <f:textbox value="${instance.buildOptions}"/>
+        </f:entry>
+        <f:entry title="${Ansi C Additional Build Options}" field="ansicBuildOptions">
+            <f:textbox value="${instance.ansicBuildOptions}"/>
+        </f:entry>
         <f:entry title="${%Continue Job on Build Failure}" field="continueOnErrors">
             <f:checkbox value="${instance.continueOnErrors}" checked="${instance.continueOnErrors}" default="false"/>
         </f:entry>
