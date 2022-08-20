@@ -9,7 +9,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -23,8 +22,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 public class Hardware {
-    private File hardwareFile;
-    private Document xml;
+    private final File hardwareFile;
+    private final Document xml;
 
     private Hardware(File hardwareFile, Document xml) {
         this.hardwareFile = hardwareFile;
@@ -37,11 +36,7 @@ public class Hardware {
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document document = builder.parse(hardwareFile);
             return new Hardware(hardwareFile, document);
-        } catch (ParserConfigurationException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (SAXException e) {
+        } catch (ParserConfigurationException | IOException | SAXException e) {
             throw new RuntimeException(e);
         }
     }
@@ -54,21 +49,20 @@ public class Hardware {
             FileWriter writer = new FileWriter(hardwareFile);
             StreamResult result = new StreamResult(writer);
             transformer.transform(source, result);
-        } catch (TransformerConfigurationException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (TransformerException e) {
+        } catch (IOException | TransformerException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public String getConfigVersion() {
+    public String getParameter(String moduleName, String id) {
         try {
+            String path = moduleName != null
+                    ? "Module[@Name='" + moduleName + "']/Parameter[@ID='" + id + "']"
+                    : "Module/Parameter[@ID='" + id + "']";
             Element root = xml.getDocumentElement();
             XPathFactory xPathFactory = XPathFactory.newInstance();
             XPath xPath = xPathFactory.newXPath();
-            NodeList nodes = (NodeList) xPath.evaluate("Module/Parameter[@ID='ConfigVersion']", root, XPathConstants.NODESET);
+            NodeList nodes = (NodeList) xPath.evaluate(path, root, XPathConstants.NODESET);
             if (nodes.getLength() == 1) {
                 return nodes.item(0).getAttributes().getNamedItem("Value").getNodeValue();
             }
@@ -79,17 +73,50 @@ public class Hardware {
         return "";
     }
 
-    public void setConfigVersion(String version) {
+    public String getParameter(String id) {
+        return getParameter(null, id);
+    }
+
+    public void setParameter(String moduleName, String id, String value) {
         try {
+            String path = moduleName != null
+                    ? "Module[@Name='" + moduleName + "']/Parameter[@ID='" + id + "']"
+                    : "Module/Parameter[@ID='" + id + "']";
             Element root = xml.getDocumentElement();
             XPathFactory xPathFactory = XPathFactory.newInstance();
             XPath xPath = xPathFactory.newXPath();
-            NodeList nodes = (NodeList) xPath.evaluate("Module/Parameter[@ID='ConfigVersion']", root, XPathConstants.NODESET);
+            NodeList nodes = (NodeList) xPath.evaluate(path, root, XPathConstants.NODESET);
             if (nodes.getLength() == 1) {
-                nodes.item(0).getAttributes().getNamedItem("Value").setNodeValue(version);
+                nodes.item(0).getAttributes().getNamedItem("Value").setNodeValue(value);
             }
         } catch (XPathExpressionException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void setParameter(String id, String value) {
+        setParameter(null, id, value);
+    }
+
+    public String getConfigVersion() {
+        return getParameter("ConfigVersion");
+    }
+
+    public void setConfigVersion(String version) {
+        setParameter("ConfigVersion", version);
+    }
+
+    public int getWebServerPort() {
+        try {
+            String portStr = getParameter("WebServerPort");
+            return Integer.parseInt(portStr);
+        } catch (Exception e) {
+            // Default port is 80
+            return 80;
+        }
+    }
+
+    public void setWebServerPort(int port) {
+        setParameter("WebServerPort", Integer.toString(port));
     }
 }
