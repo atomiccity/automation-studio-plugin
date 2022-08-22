@@ -1,5 +1,7 @@
 package io.jenkins.plugins.automationstudio;
 
+import city.atomic.automationstudio.unittest.UnitTestServerResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -15,9 +17,11 @@ import org.kohsuke.stapler.DataBoundSetter;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class AutomationStudioUnitTest extends Builder implements SimpleBuildStep {
     private final String simExecutableDir;
@@ -112,10 +116,26 @@ public class AutomationStudioUnitTest extends Builder implements SimpleBuildStep
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
+            String response = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))
+                    .lines()
+                    .collect(Collectors.joining("\n"));
+            if (conn.getResponseCode() != 200) {
+                listener.getLogger().println("Response from unit test list request: " + conn.getResponseCode());
+                listener.getLogger().println("Response: " + response);
+                listener.fatalError("Couldn't get list of unit tests");
+                run.setResult(Result.FAILURE);
+                return;
+            }
+            ObjectMapper objectMapper = new ObjectMapper();
+            UnitTestServerResponse unitTestResponse = objectMapper.readValue(response, UnitTestServerResponse.class);
+            for (UnitTestServerResponse.UnitTest ut : unitTestResponse.getItemList()) {
+                listener.getLogger().println("Found unit test: " + ut.getDevice() + " - " + ut.getDescription());
+                testsToRun.add(ut.getDevice());
+            }
         }
 
         for (String test : testsToRun) {
-            listener.getLogger().println("Running test " + test + "...");
             runTest(test, listener);
         }
 
@@ -128,6 +148,8 @@ public class AutomationStudioUnitTest extends Builder implements SimpleBuildStep
     }
 
     private void runTest(String testName, TaskListener listener) {
+        listener.getLogger().println("Running test " + testName + "...");
+
         try {
             File resultOutputDir = new File(outputDir);
             resultOutputDir.mkdirs();
