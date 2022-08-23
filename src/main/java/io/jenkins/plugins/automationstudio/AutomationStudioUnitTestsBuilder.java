@@ -3,14 +3,18 @@ package io.jenkins.plugins.automationstudio;
 import city.atomic.automationstudio.unittest.UnitTestServerResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hudson.EnvVars;
+import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.model.AbstractProject;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.ArgumentListBuilder;
 import jenkins.tasks.SimpleBuildStep;
+import org.jenkinsci.Symbol;
 import org.jetbrains.annotations.NotNull;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -23,7 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class AutomationStudioUnitTest extends Builder implements SimpleBuildStep {
+public class AutomationStudioUnitTestsBuilder extends Builder implements SimpleBuildStep {
     private final String simExecutableDir;
     private final String outputDir;
 
@@ -32,7 +36,7 @@ public class AutomationStudioUnitTest extends Builder implements SimpleBuildStep
     private int webServerPort;
 
     @DataBoundConstructor
-    public AutomationStudioUnitTest(String simExecutableDir, String outputDir) {
+    public AutomationStudioUnitTestsBuilder(String simExecutableDir, String outputDir) {
         this.simExecutableDir = simExecutableDir;
         this.outputDir = outputDir;
         this.webServerPort = 80;
@@ -70,7 +74,8 @@ public class AutomationStudioUnitTest extends Builder implements SimpleBuildStep
             return;
         }
 
-        args.add(workspace.child(simExecutableDir));
+        FilePath simStartExecutableFullPath = workspace.child(simExecutableDir).child("ar000loader.exe");
+        args.add(simStartExecutableFullPath);
         args.add("-i127.0.0.1");
         args.add("-p4003");
 
@@ -107,7 +112,7 @@ public class AutomationStudioUnitTest extends Builder implements SimpleBuildStep
         }
 
         List<String> testsToRun = new ArrayList<String>();
-        if (unitTestList != null) {
+        if (unitTestList != null && !unitTestList.isEmpty()) {
             testsToRun.addAll(Arrays.asList(unitTestList.split(",")));
         } else {
             listener.getLogger().println("Fetching list of unit tests");
@@ -174,6 +179,26 @@ public class AutomationStudioUnitTest extends Builder implements SimpleBuildStep
         } catch (IOException e) {
             listener.fatalError("Error during unit test " + testName);
             throw new RuntimeException(e);
+        }
+    }
+
+    @Extension
+    @Symbol("automationStudioUnitTests")
+    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+        public DescriptorImpl() {
+            super(AutomationStudioUnitTestsBuilder.class);
+            load();
+        }
+
+        @NotNull
+        @Override
+        public String getDisplayName() {
+            return "Automation Studio Unit Tests";
+        }
+
+        @Override
+        public boolean isApplicable(Class<? extends AbstractProject> jobType) {
+            return true;
         }
     }
 }
