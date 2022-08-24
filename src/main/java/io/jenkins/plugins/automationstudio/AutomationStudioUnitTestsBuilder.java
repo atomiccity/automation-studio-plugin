@@ -81,7 +81,7 @@ public class AutomationStudioUnitTestsBuilder extends Builder implements SimpleB
 
         // Start SIM
         listener.getLogger().println("Starting sim process: " + args.toString());
-        launcher.launch().cmds(args.toWindowsCommand()).envs(env).pwd(workspace);
+        launcher.launch().cmds(args.toWindowsCommand()).envs(env).pwd(workspace).start();
 
         // Wait for SIM to enter RUN mode
         listener.getLogger().println("Waiting for sim to enter RUN mode...");
@@ -96,7 +96,9 @@ public class AutomationStudioUnitTestsBuilder extends Builder implements SimpleB
             byte[] recvData = new byte[1024];
             socketOut.write("<Status Command=\"10\"/>".getBytes());
             socketIn.read(recvData);
-            if (recvData.equals("<AR status RUN Command=\"99\"/>\0".getBytes())) {
+            String recvStr = (new String(recvData)).trim();
+            // TODO: Need to handle "<AR status SERVCIE Command="98"/>".  SERVICE mode?
+            if (recvStr.equals("<AR status RUN Command=\"99\"/>")) {
                 listener.getLogger().println("Sim is now in RUN mode");
                 runMode = true;
                 socket.close();
@@ -106,6 +108,7 @@ public class AutomationStudioUnitTestsBuilder extends Builder implements SimpleB
         }
 
         if (!runMode) {
+            socket.close();
             listener.fatalError("Could not start sim");
             run.setResult(Result.FAILURE);
             return;
@@ -141,7 +144,7 @@ public class AutomationStudioUnitTestsBuilder extends Builder implements SimpleB
         }
 
         for (String test : testsToRun) {
-            runTest(test, listener);
+            runTest(test, workspace, listener);
         }
 
         // Shutdown the sim
@@ -152,32 +155,28 @@ public class AutomationStudioUnitTestsBuilder extends Builder implements SimpleB
         launcher.launch().cmds(args.toWindowsCommand()).envs(env).pwd(workspace);
     }
 
-    private void runTest(String testName, TaskListener listener) {
+    private void runTest(String testName, FilePath workspace, TaskListener listener) {
         listener.getLogger().println("Running test " + testName + "...");
 
         try {
-            File resultOutputDir = new File(outputDir);
+            FilePath resultOutputDir = workspace.child(outputDir);
             resultOutputDir.mkdirs();
             URL url = new URL("http://127.0.0.1:" + webServerPort + "/WsTest/" + testName);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
-            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             if (conn.getResponseCode() != 200) {
                 listener.fatalError("Error starting unit test " + testName);
-                in.close();
                 conn.disconnect();
                 return;
             }
-            String inputLine;
-            FileWriter fw = new FileWriter(resultOutputDir.getName() + "/" + testName + ".xml");
-            while ((inputLine = in.readLine()) != null) {
-                fw.write(inputLine);
-            }
+            InputStream in = conn.getInputStream();
+            resultOutputDir.child(testName + ".xml").copyFrom(in);
             in.close();
-            fw.close();
             conn.disconnect();
         } catch (IOException e) {
             listener.fatalError("Error during unit test " + testName);
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
