@@ -3,7 +3,7 @@ package city.atomic.automationstudio.unittest;
 import java.util.List;
 
 public class UnitTestServerResponse {
-    public class UnitTest {
+    public static class UnitTest {
         private String device;
         private String description;
 
