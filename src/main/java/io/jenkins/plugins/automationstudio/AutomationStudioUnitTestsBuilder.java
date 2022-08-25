@@ -85,30 +85,35 @@ public class AutomationStudioUnitTestsBuilder extends Builder implements SimpleB
 
         // Wait for SIM to enter RUN mode
         listener.getLogger().println("Waiting for sim to enter RUN mode...");
-        Socket socket = new Socket("127.0.0.1", 4003);
-        socket.setSoTimeout(2000);
-        OutputStream socketOut = socket.getOutputStream();
-        InputStream socketIn = socket.getInputStream();
-        int retries = 250;
+        int retries = 100;
         boolean runMode = false;
 
         while (!runMode && retries > 0) {
-            byte[] recvData = new byte[1024];
-            socketOut.write("<Status Command=\"10\"/>".getBytes());
-            socketIn.read(recvData);
-            String recvStr = (new String(recvData)).trim();
-            // TODO: Need to handle "<AR status SERVCIE Command="98"/>".  SERVICE mode?
-            if (recvStr.equals("<AR status RUN Command=\"99\"/>")) {
-                listener.getLogger().println("Sim is now in RUN mode");
-                runMode = true;
-                socket.close();
+            try (Socket socket = new Socket("127.0.0.1", 4003)) {
+                socket.setSoTimeout(2000);
+                OutputStream socketOut = socket.getOutputStream();
+                InputStream socketIn = socket.getInputStream();
+                byte[] recvData = new byte[1024];
+                socketOut.write("<Status Command=\"10\"/>".getBytes());
+                socketIn.read(recvData);
+                String recvStr = (new String(recvData)).trim();
+                // NOTE: The typo in the following string is intentional.  That is the response that is actually sent.
+                if (recvStr.equals("<AR status SERVCIE Command=\"98\"/>")
+                    || recvStr.equals("<AR status SERVICE Command=\"98\"/>")) {
+                    listener.getLogger().println("Sim appears to be in service mode, restarting it.");
+                    socketOut.write("<Warm Restart Command=\"6\"/>".getBytes());
+                } else if (recvStr.equals("<AR status RUN Command=\"99\"/>")) {
+                    listener.getLogger().println("Sim is now in RUN mode");
+                    runMode = true;
+                }
+            } catch (ConnectException e) {
+                listener.getLogger().println("Got connection error, going to retry...");
             }
             Thread.sleep(2000);
             retries--;
         }
 
         if (!runMode) {
-            socket.close();
             listener.fatalError("Could not start sim");
             run.setResult(Result.FAILURE);
             return;
