@@ -1,5 +1,6 @@
 package city.atomic.automationstudio;
 
+import hudson.FilePath;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -17,39 +18,38 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public class Hardware {
-    private final File hardwareFile;
+    private final FilePath hardwareFile;
     private final Document xml;
 
-    private Hardware(File hardwareFile, Document xml) {
+    private Hardware(FilePath hardwareFile, Document xml) {
         this.hardwareFile = hardwareFile;
         this.xml = xml;
     }
 
-    public static Hardware load(File hardwareFile) {
-        try {
+    public static Hardware load(FilePath hardwareFile) {
+        try (InputStream in = hardwareFile.read()) {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(hardwareFile);
+            Document document = builder.parse(in);
             return new Hardware(hardwareFile, document);
-        } catch (ParserConfigurationException | IOException | SAXException e) {
+        } catch (ParserConfigurationException | IOException | SAXException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
     public void save() {
-        try {
+        try (OutputStream out = hardwareFile.write()) {
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
             DOMSource source = new DOMSource(xml);
-            FileWriter writer = new FileWriter(hardwareFile);
-            StreamResult result = new StreamResult(writer);
+            StreamResult result = new StreamResult(out);
             transformer.transform(source, result);
-        } catch (IOException | TransformerException e) {
+        } catch (IOException | TransformerException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }

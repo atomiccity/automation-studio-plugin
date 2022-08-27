@@ -1,5 +1,6 @@
 package city.atomic.automationstudio;
 
+import hudson.FilePath;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -13,34 +14,29 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Project {
-    private final File projectFile;
-    private final Path projectRoot;
+    private final FilePath projectRoot;
 
-    private Project(File projectFile) {
-        this.projectFile = projectFile;
-        this.projectRoot = Paths.get(projectFile.getParent());
+    private Project(FilePath projectFile) {
+        this.projectRoot = projectFile.getParent();
     }
 
-    public static Project load(String projectFilePath) {
-        return new Project(new File(projectFilePath));
+    public static Project load(FilePath projectFilePath) {
+        return new Project(projectFilePath);
     }
 
     public List<Config> getConfigs() {
         List<Config> configs = new ArrayList<Config>();
 
         try {
-            File physicalPkg = new File(projectRoot.toString(), "Physical/Physical.pkg");
+            FilePath physicalPkg = projectRoot.child("Physical").child("Physical.pkg");
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document =  builder.parse(physicalPkg);
+            Document document =  builder.parse(physicalPkg.read());
             Element root = document.getDocumentElement();
             XPathFactory xPathFactory = XPathFactory.newInstance();
             XPath xPath = xPathFactory.newXPath();
@@ -49,11 +45,12 @@ public class Project {
             for (int i = 0; i < nodes.getLength(); i++) {
                 Node n = nodes.item(i);
                 String name = n.getTextContent();
-                File configPkgFile = new File(projectRoot.toString(), "Physical/" + name + "/Config.pkg");
+                FilePath configPkgFile = projectRoot.child("Physical").child(name).child("Config.pkg");
                 Config config = Config.load(name, configPkgFile);
                 configs.add(config);
             }
-        } catch (ParserConfigurationException | SAXException | IOException | XPathExpressionException e) {
+        } catch (ParserConfigurationException | SAXException | IOException | XPathExpressionException |
+                 InterruptedException e) {
             throw new RuntimeException(e);
         }
 

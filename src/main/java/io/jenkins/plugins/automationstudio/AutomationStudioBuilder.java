@@ -284,11 +284,11 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
         }
 
         FilePath pwd = workspace;
-        String fullProjectFilePath = workspace.child(projectFile).getRemote();
+        FilePath projectFile = workspace.child(getProjectFile());
 
         // Set version if given
         if (version != null) {
-            city.atomic.automationstudio.Project p = city.atomic.automationstudio.Project.load(fullProjectFilePath);
+            city.atomic.automationstudio.Project p = city.atomic.automationstudio.Project.load(projectFile);
             city.atomic.automationstudio.Config c = p.findConfig(configurationName);
             if (c != null) {
                 Hardware hw = c.getHardware();
@@ -299,7 +299,7 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
 
         // Set build options if given
         if (buildOptions != null) {
-            city.atomic.automationstudio.Project p = city.atomic.automationstudio.Project.load(fullProjectFilePath);
+            city.atomic.automationstudio.Project p = city.atomic.automationstudio.Project.load(projectFile);
             city.atomic.automationstudio.Config c = p.findConfig(configurationName);
             if (c != null) {
                 Cpu cpu = c.getCpu();
@@ -308,7 +308,7 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
             }
         }
         if (ansicBuildOptions != null) {
-            city.atomic.automationstudio.Project p = city.atomic.automationstudio.Project.load(fullProjectFilePath);
+            city.atomic.automationstudio.Project p = city.atomic.automationstudio.Project.load(projectFile);
             city.atomic.automationstudio.Config c = p.findConfig(configurationName);
             if (c != null) {
                 Cpu cpu = c.getCpu();

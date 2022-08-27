@@ -1,6 +1,6 @@
 package city.atomic.automationstudio;
 
-import org.apache.commons.lang.NotImplementedException;
+import hudson.FilePath;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -10,7 +10,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -19,32 +18,26 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 
 public class Cpu {
     private String cpuType;
-    private File cpuConfigFile;
+    private FilePath cpuConfigFile;
     private Document xml;
 
-    private Cpu(String cpuType, File cpuConfigFile, Document xml) {
+    private Cpu(String cpuType, FilePath cpuConfigFile, Document xml) {
         this.cpuType = cpuType;
         this.cpuConfigFile = cpuConfigFile;
         this.xml = xml;
     }
 
-    public static Cpu load(String cpuType, File cpuConfigFile) {
+    public static Cpu load(String cpuType, FilePath cpuConfigFile) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(cpuConfigFile);
+            Document document = builder.parse(cpuConfigFile.read());
             return new Cpu(cpuType, cpuConfigFile, document);
-        } catch (ParserConfigurationException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (SAXException e) {
+        } catch (ParserConfigurationException | InterruptedException | IOException | SAXException e) {
             throw new RuntimeException(e);
         }
     }
@@ -54,14 +47,9 @@ public class Cpu {
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
             DOMSource source = new DOMSource(xml);
-            FileWriter writer = new FileWriter(cpuConfigFile);
-            StreamResult result = new StreamResult(writer);
+            StreamResult result = new StreamResult(cpuConfigFile.write());
             transformer.transform(source, result);
-        } catch (TransformerConfigurationException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (TransformerException e) {
+        } catch (IOException | TransformerException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
