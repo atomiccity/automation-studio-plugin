@@ -32,6 +32,8 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
     private String version;
     private String buildOptions;
     private String ansicBuildOptions;
+    private String addDefines;
+    private String removeDefines;
     private boolean unstableIfWarnings;
     private boolean continueOnErrors;
 
@@ -48,6 +50,8 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
         this.version = null;
         this.buildOptions = null;
         this.ansicBuildOptions = null;
+        this.addDefines = null;
+        this.removeDefines = null;
         this.unstableIfWarnings = false;
         this.continueOnErrors = false;
     }
@@ -55,7 +59,8 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
     public AutomationStudioBuilder(String automationStudioName, String projectFile, String configurationName,
                                    String buildMode, boolean simulation, boolean buildRUCPackage, String tempDir,
                                    String binDir, String version, String buildOptions, String ansicBuildOptions,
-                                   boolean unstableIfWarnings, boolean continueOnErrors) {
+                                   String addDefines, String removeDefines, boolean unstableIfWarnings,
+                                   boolean continueOnErrors) {
         this.automationStudioName = automationStudioName;
         this.projectFile = projectFile;
         this.configurationName = configurationName;
@@ -67,6 +72,8 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
         this.version = version;
         this.buildOptions = buildOptions;
         this.ansicBuildOptions = ansicBuildOptions;
+        this.addDefines = addDefines;
+        this.removeDefines = removeDefines;
         this.unstableIfWarnings = unstableIfWarnings;
         this.continueOnErrors = continueOnErrors;
     }
@@ -158,6 +165,24 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
     @DataBoundSetter
     public void setAnsicBuildOptions(String ansicBuildOptions) {
         this.ansicBuildOptions = ansicBuildOptions;
+    }
+
+    public String getAddDefines() {
+        return addDefines;
+    }
+
+    @DataBoundSetter
+    public void setAddDefines(String addDefines) {
+        this.addDefines = addDefines;
+    }
+
+    public String getRemoveDefines() {
+        return removeDefines;
+    }
+
+    @DataBoundSetter
+    public void setRemoveDefines(String removeDefines) {
+        this.removeDefines = removeDefines;
     }
 
     @DataBoundSetter
@@ -313,6 +338,36 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
             if (c != null) {
                 Cpu cpu = c.getCpu();
                 cpu.setAnsicAdditionalBuildOptions(ansicBuildOptions);
+                cpu.save();
+            }
+        }
+        if (addDefines != null) {
+            city.atomic.automationstudio.Project p = city.atomic.automationstudio.Project.load(projectFile);
+            city.atomic.automationstudio.Config c = p.findConfig(configurationName);
+            if (c != null) {
+                String[] defines = addDefines.split("[,\\s]\\s*");
+                String[] addOptions = Arrays.stream(defines).map(s -> "-D" + s).toArray(String[]::new);
+                Cpu cpu = c.getCpu();
+                String origDefines = cpu.getAdditionalBuildOptions();
+                origDefines += " " + String.join(" ", addOptions);
+                cpu.setAdditionalBuildOptions(origDefines);
+                cpu.save();
+            }
+        }
+        if (removeDefines != null) {
+            city.atomic.automationstudio.Project p = city.atomic.automationstudio.Project.load(projectFile);
+            city.atomic.automationstudio.Config c = p.findConfig(configurationName);
+            if (c != null) {
+                String[] defines = removeDefines.split("[,\\s]\\s*");
+                Cpu cpu = c.getCpu();
+                for (String d : defines) {
+                    String origDefines = cpu.getAdditionalBuildOptions();
+                    String newDefines = origDefines.replaceAll("-D\\s*" + d, "");
+                    cpu.setAdditionalBuildOptions(newDefines);
+                    origDefines = cpu.getAnsicAdditionalBuildOptions();
+                    newDefines = origDefines.replaceAll("-D\\s*" + d, "");
+                    cpu.setAnsicAdditionalBuildOptions(newDefines);
+                }
                 cpu.save();
             }
         }

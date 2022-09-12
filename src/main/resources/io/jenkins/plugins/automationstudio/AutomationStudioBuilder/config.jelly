@@ -32,6 +32,12 @@
         <f:entry title="${%Ansi C Additional Build Options}" field="ansicBuildOptions">
             <f:textbox value="${instance.ansicBuildOptions}"/>
         </f:entry>
+        <f:entry title="${%DEFINEs to add}" field="addDefines">
+            <f:textbox value="${instance.addDefines}"/>
+        </f:entry>
+        <f:entry title="${%DEFINEs to remove}" field="removeDefines">
+            <f:textbox value="${instance.removeDefines}"/>
+        </f:entry>
         <f:entry title="${%Continue Job on Build Failure}" field="continueOnErrors">
             <f:checkbox value="${instance.continueOnErrors}" checked="${instance.continueOnErrors}" default="false"/>
         </f:entry>
