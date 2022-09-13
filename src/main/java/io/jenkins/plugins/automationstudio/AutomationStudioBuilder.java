@@ -346,7 +346,7 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
             city.atomic.automationstudio.Config c = p.findConfig(configurationName);
             if (c != null) {
                 String[] defines = addDefines.split("[,\\s]\\s*");
-                String[] addOptions = Arrays.stream(defines).map(s -> "-D" + s).toArray(String[]::new);
+                String[] addOptions = Arrays.stream(defines).map(s -> "-D " + s).toArray(String[]::new);
                 Cpu cpu = c.getCpu();
                 String origDefines = cpu.getAdditionalBuildOptions();
                 origDefines += " " + String.join(" ", addOptions);
