@@ -19,11 +19,13 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public class Cpu {
-    private String cpuType;
-    private FilePath cpuConfigFile;
-    private Document xml;
+    private final String cpuType;
+    private final FilePath cpuConfigFile;
+    private final Document xml;
 
     private Cpu(String cpuType, FilePath cpuConfigFile, Document xml) {
         this.cpuType = cpuType;
@@ -32,10 +34,10 @@ public class Cpu {
     }
 
     public static Cpu load(String cpuType, FilePath cpuConfigFile) {
-        try {
+        try (InputStream in = cpuConfigFile.read()) {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(cpuConfigFile.read());
+            Document document = builder.parse(in);
             return new Cpu(cpuType, cpuConfigFile, document);
         } catch (ParserConfigurationException | InterruptedException | IOException | SAXException e) {
             throw new RuntimeException(e);
@@ -43,11 +45,11 @@ public class Cpu {
     }
 
     public void save() {
-        try {
+        try (OutputStream out = cpuConfigFile.write()) {
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
             DOMSource source = new DOMSource(xml);
-            StreamResult result = new StreamResult(cpuConfigFile.write());
+            StreamResult result = new StreamResult(out);
             transformer.transform(source, result);
         } catch (IOException | TransformerException | InterruptedException e) {
             throw new RuntimeException(e);
