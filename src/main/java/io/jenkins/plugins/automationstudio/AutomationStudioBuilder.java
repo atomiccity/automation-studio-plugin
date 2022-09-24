@@ -312,7 +312,7 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
         FilePath projectFile = workspace.child(getProjectFile());
 
         // Set version if given
-        if (version != null) {
+        if ((version != null) && (version.length() != 0)) {
             city.atomic.automationstudio.Project p = city.atomic.automationstudio.Project.load(projectFile);
             city.atomic.automationstudio.Config c = p.findConfig(configurationName);
             if (c != null) {
@@ -323,7 +323,7 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
         }
 
         // Set build options if given
-        if (buildOptions != null) {
+        if ((buildOptions != null) && (buildOptions.length() != 0)) {
             city.atomic.automationstudio.Project p = city.atomic.automationstudio.Project.load(projectFile);
             city.atomic.automationstudio.Config c = p.findConfig(configurationName);
             if (c != null) {
@@ -332,7 +332,7 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
                 cpu.save();
             }
         }
-        if (ansicBuildOptions != null) {
+        if ((ansicBuildOptions != null) && (ansicBuildOptions.length() != 0))  {
             city.atomic.automationstudio.Project p = city.atomic.automationstudio.Project.load(projectFile);
             city.atomic.automationstudio.Config c = p.findConfig(configurationName);
             if (c != null) {
@@ -341,7 +341,7 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
                 cpu.save();
             }
         }
-        if (addDefines != null) {
+        if ((addDefines != null) && (addDefines.length() != 0)) {
             city.atomic.automationstudio.Project p = city.atomic.automationstudio.Project.load(projectFile);
             city.atomic.automationstudio.Config c = p.findConfig(configurationName);
             if (c != null) {
@@ -354,19 +354,21 @@ public class AutomationStudioBuilder extends Builder implements SimpleBuildStep 
                 cpu.save();
             }
         }
-        if (removeDefines != null) {
+        if ((removeDefines != null) && (removeDefines.length() != 0)) {
             city.atomic.automationstudio.Project p = city.atomic.automationstudio.Project.load(projectFile);
             city.atomic.automationstudio.Config c = p.findConfig(configurationName);
             if (c != null) {
                 String[] defines = removeDefines.split("[,\\s]\\s*");
                 Cpu cpu = c.getCpu();
                 for (String d : defines) {
-                    String origDefines = cpu.getAdditionalBuildOptions();
-                    String newDefines = origDefines.replaceAll("-D\\s*" + d, "");
-                    cpu.setAdditionalBuildOptions(newDefines);
-                    origDefines = cpu.getAnsicAdditionalBuildOptions();
-                    newDefines = origDefines.replaceAll("-D\\s*" + d, "");
-                    cpu.setAnsicAdditionalBuildOptions(newDefines);
+                    if (d.length() > 0) {
+                        String origDefines = cpu.getAdditionalBuildOptions();
+                        String newDefines = origDefines.replaceAll("-D\\s*" + d, "");
+                        cpu.setAdditionalBuildOptions(newDefines);
+                        origDefines = cpu.getAnsicAdditionalBuildOptions();
+                        newDefines = origDefines.replaceAll("-D\\s*" + d, "");
+                        cpu.setAnsicAdditionalBuildOptions(newDefines);
+                    }
                 }
                 cpu.save();
             }
