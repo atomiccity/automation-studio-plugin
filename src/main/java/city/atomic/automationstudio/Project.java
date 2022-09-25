@@ -30,7 +30,7 @@ public class Project {
     }
 
     public List<Config> getConfigs() {
-        List<Config> configs = new ArrayList<Config>();
+        List<Config> configs = new ArrayList<>();
 
         try {
             FilePath physicalPkg = projectRoot.child("Physical").child("Physical.pkg");
