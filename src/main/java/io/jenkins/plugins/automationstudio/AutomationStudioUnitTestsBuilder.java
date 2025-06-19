@@ -21,6 +21,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,15 +95,15 @@ public class AutomationStudioUnitTestsBuilder extends Builder implements SimpleB
                 OutputStream socketOut = socket.getOutputStream();
                 InputStream socketIn = socket.getInputStream();
                 byte[] recvData = new byte[1024];
-                socketOut.write("<Status Command=\"10\"/>".getBytes());
-                socketIn.read(recvData);
-                String recvStr = (new String(recvData)).trim();
+                socketOut.write("<Status Command=\"10\"/>".getBytes(StandardCharsets.UTF_8));
+                int bytesRead = socketIn.read(recvData);
+                String recvStr = (new String(recvData, StandardCharsets.UTF_8)).trim();
                 // NOTE: The typo in the following string is intentional.  That is the response that is actually sent.
-                if (recvStr.equals("<AR status SERVCIE Command=\"98\"/>")
+                if (bytesRead != -1 && recvStr.equals("<AR status SERVCIE Command=\"98\"/>")
                     || recvStr.equals("<AR status SERVICE Command=\"98\"/>")) {
                     listener.getLogger().println("Sim appears to be in service mode, restarting it.");
-                    socketOut.write("<Warm Restart Command=\"6\"/>".getBytes());
-                } else if (recvStr.equals("<AR status RUN Command=\"99\"/>")) {
+                    socketOut.write("<Warm Restart Command=\"6\"/>".getBytes(StandardCharsets.UTF_8));
+                } else if (bytesRead != -1 && recvStr.equals("<AR status RUN Command=\"99\"/>")) {
                     listener.getLogger().println("Sim is now in RUN mode");
                     runMode = true;
                 }
@@ -129,22 +130,22 @@ public class AutomationStudioUnitTestsBuilder extends Builder implements SimpleB
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
-            String response = new BufferedReader(
-                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))
-                    .lines()
-                    .collect(Collectors.joining("\n"));
-            if (conn.getResponseCode() != 200) {
-                listener.getLogger().println("Response from unit test list request: " + conn.getResponseCode());
-                listener.getLogger().println("Response: " + response);
-                listener.fatalError("Couldn't get list of unit tests");
-                run.setResult(Result.FAILURE);
-                return;
-            }
-            ObjectMapper objectMapper = new ObjectMapper();
-            UnitTestServerResponse unitTestResponse = objectMapper.readValue(response, UnitTestServerResponse.class);
-            for (UnitTestServerResponse.UnitTest ut : unitTestResponse.getItemList()) {
-                listener.getLogger().println("Found unit test: " + ut.getDevice() + " - " + ut.getDescription());
-                testsToRun.add(ut.getDevice());
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                String response = br.lines().collect(Collectors.joining("\n"));
+                if (conn.getResponseCode() != 200) {
+                    listener.getLogger().println("Response from unit test list request: " + conn.getResponseCode());
+                    listener.getLogger().println("Response: " + response);
+                    listener.fatalError("Couldn't get list of unit tests");
+                    run.setResult(Result.FAILURE);
+                    return;
+                }
+                ObjectMapper objectMapper = new ObjectMapper();
+                UnitTestServerResponse unitTestResponse = objectMapper.readValue(response, UnitTestServerResponse.class);
+                for (UnitTestServerResponse.UnitTest ut : unitTestResponse.getItemList()) {
+                    listener.getLogger().println("Found unit test: " + ut.getDevice() + " - " + ut.getDescription());
+                    testsToRun.add(ut.getDevice());
+                }
             }
         }
 

@@ -14,6 +14,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.IOException;
+import java.util.Objects;
 
 public class Config {
     private final String name;
@@ -44,7 +45,7 @@ public class Config {
 
             if (nodes.getLength() == 1) {
                 String cpuType = nodes.item(0).getTextContent();
-                return Cpu.load(cpuType, configPkgFile.getParent().child(cpuType).child("Cpu.pkg"));
+                return Cpu.load(cpuType, Objects.requireNonNull(configPkgFile.getParent()).child(cpuType).child("Cpu.pkg"));
             }
         } catch (ParserConfigurationException | SAXException | IOException | XPathExpressionException |
                  InterruptedException e) {
@@ -55,6 +56,6 @@ public class Config {
     }
 
     public Hardware getHardware() {
-        return Hardware.load(configPkgFile.getParent().child("Hardware.hw"));
+        return Hardware.load(Objects.requireNonNull(configPkgFile.getParent()).child("Hardware.hw"));
     }
 }
