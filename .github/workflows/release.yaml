@@ -35,7 +35,10 @@ jobs:
           java-version: "21"
 
       - name: Update plugin version
-        run: mvn versions:set -DnewVersion=${{ github.ref_name }}
+        run: |
+          TAG=${{ github.ref_name }}
+          echo "VERSION=${TAG#v}" >> $GITHUB_ENV
+          mvn versions:set -DnewVersion=$VERSION
 
       - name: Build project with Maven
         run: mvn -B package --file pom.xml
